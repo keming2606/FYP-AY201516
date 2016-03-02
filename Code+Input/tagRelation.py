@@ -211,8 +211,9 @@ def relInfo(inputFile,inputFile2,outputFile):
 	fw.close()	
 
 #Format the relations for graph visualization
-def graphCSV(inputFile,inputFile2,outputFile):
+def graphCSV(inputFile_cat,inputFile,inputFile2,outputFile):
 
+	
 	f = open(inputFile)
 	lines = f.readlines()
 	relTag = []
@@ -243,12 +244,23 @@ def graphCSV(inputFile,inputFile2,outputFile):
 	G.add_edges_from(relTagP)
 	edgenum = nx.degree(G)
 	
-	relNum = ["others","framework","library","plugin","package","tool","class","implementation","component","api","module","extension","function","wrapper","engine","system","client","interface","server","language","gem","app"]
-	relDic = {"frameworks":"framework", "libraries": "library", "plugins": "plugin", "plug-in": "plugin", "plug-ins":"plugin", "packages": "package", "tools": "tool", "toolkit": "tool", "classes": "class","components":"component","apis":"api","modules":"module","extensions":"extension","functions":"function","functionality":"function","wrappers":"wrapper","engines":"engine","systems":"system","interfaces":"interface","application":"app","applications":"app","apps":"app"}
+	relNum = ["others","library","package","tool","class","implementation","component","extension","engine","system","client","interface","server","language","gem","app","platform"]
+	relDic = {"frameworks":"library", "framework": "library", "libraries": "library", "apis":"library", "api":"library", "plugins": "library", "plug-in": "library", "plug-ins":"library",
+	"plugin":"library","tools": "tool", "toolkit": "tool", "packages": "package", "classes": "class","functions":"class","function":"class","functionality":"class","feature":"class","features":"class",
+	"modules":"class","module":"class","wrappers":"class","wrapper":"class","adapter":"class","components":"component","extensions":"extension","engines":"engine","systems":"system","interfaces":"interface",
+	"gui":"interface","application":"app","applications":"app","apps":"app","platforms":"platform","ide":"platform"}
 	
+	parentcat={}
+	f = open(inputFile_cat)
+	parentline = f.readlines()
+	for index, row in enumerate(parentline):
+		items = row.strip().split("	")
+		parentcat[items[0]] = items[1].rsplit(None, 1)[-1]
+	f.close()
+
 	#dest: parent tag, edgestag: number of edges for tag, edgesdest: number of edges for parent tag
 	fw = open(outputFile, "w")
-	fw.write("tag,dest,rel,relvalue,edgestag,edgesdest\n")
+	fw.write("tag,dest,rel,relvalue,prel,prelvalue,edgestag,edgesdest\n")
 	for index, row in enumerate(tagline):
 		items = row.strip().split("	")
 		if len(items) == 4:
@@ -256,11 +268,24 @@ def graphCSV(inputFile,inputFile2,outputFile):
 			rel = rel.replace("|","")
 			rel = rel.replace(".","")
 			rel = rel.lower()
+			grprel = rel
 			if rel in relDic:
-				rel = relDic[rel]
-			if rel not in relNum:	
-				rel = "others"
-			fw.write("%s,%s,%s,%d,%d,%d\n" % (items[0] , items[1],rel,relNum.index(rel),edgenum[items[0]],edgenum[items[1]]))
+				grprel = relDic[rel]
+			if grprel not in relNum:	
+				grprel = "others"
+			if items[1] in parentcat:
+				prel = parentcat[items[1]]
+				prel = prel.replace("|","")
+				prel = prel.replace(".","")
+				prel = prel.lower()
+				pgrprel = prel
+				if prel in relDic:
+					pgrprel = relDic[prel]
+				if pgrprel not in relNum:	
+					pgrprel = "others"
+			else:
+				pgrprel = "others"
+			fw.write("%s,%s,%s,%d,%s,%d,%d,%d\n" % (items[0] , items[1],grprel,relNum.index(grprel),pgrprel,relNum.index(pgrprel),edgenum[items[0]],edgenum[items[1]]))
 	
 	fw.close()	
 	
@@ -287,7 +312,7 @@ if __name__ == '__main__':
 		#furtherExtractRelation(f_relExceptionf,f_mrelException, f_rel,f_relException)
 		#manualRelation(f_rel,f_mCategory,f_acronym,f_mrel2,f_mrelException2)
 		#relInfo(f_mrel,f_mrel2,f_relInfo)
-		graphCSV(f_mrel,f_mrel2,f_graph)
+		graphCSV(f_refineLong,f_mrel,f_mrel2,f_graph)
 		
 	except Exception, e :
 		print 'There are exceptions'
